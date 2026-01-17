@@ -1,11 +1,23 @@
 import { useState, useEffect } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
+import Confetti from "react-confetti";
 
-export default function Game({ mode, onBack }) {
+export default function Game({ mode, onBack, players }) {
   const [game, setGame] = useState(new Chess());
   const [winner, setWinner] = useState(null);
+  const [boardWidth, setBoardWidth] = useState(window.innerWidth < 500 ? window.innerWidth - 40 : 450);
 
+  // Handle Resize for Mobile
+  useEffect(() => {
+    function handleResize() {
+      setBoardWidth(window.innerWidth < 500 ? window.innerWidth - 40 : 450);
+    }
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Bot Logic
   useEffect(() => {
     if (mode === "bot" && game.turn() === "b" && !winner) {
       setTimeout(() => {
@@ -24,7 +36,8 @@ export default function Game({ mode, onBack }) {
   function checkGameOver(currentGame) {
     if (currentGame.isGameOver()) {
       if (currentGame.isCheckmate()) {
-        setWinner(currentGame.turn() === "w" ? "Black Wins! 🏁" : "White Wins! 🏆");
+        const winnerName = currentGame.turn() === "w" ? players.black : players.white;
+        setWinner(`${winnerName} Wins! 🎉`);
       } else if (currentGame.isDraw()) {
         setWinner("It's a Draw! 🤝");
       } else {
@@ -53,6 +66,7 @@ export default function Game({ mode, onBack }) {
     }
   }
 
+  // Get Captured Pieces
   const getCaptured = (board) => {
     const pieces = { w: [], b: [] };
     const total = { p: 8, n: 2, b: 2, r: 2, q: 1, k: 1 };
@@ -67,68 +81,54 @@ export default function Game({ mode, onBack }) {
   };
   
   const captured = getCaptured(game.board());
+  const turnColor = game.turn() === 'w' ? 'white' : 'black';
+  const turnName = game.turn() === 'w' ? players.white : players.black;
 
   return (
     <div style={styles.container}>
+      {winner && <Confetti width={window.innerWidth} height={window.innerHeight} />}
+      
       <div style={styles.header}>
         <button onClick={onBack} style={styles.backBtn}>❮ Exit</button>
-        <span style={styles.modeBadge}>{mode === 'bot' ? '🤖 Bot Match' : '⚔️ PvP Mode'}</span>
+        <div style={styles.turnIndicator}>
+           Turn: <span style={{color: turnColor === 'white' ? '#4ade80' : '#ff6b6b', fontWeight: 'bold'}}>{turnName}</span>
+        </div>
       </div>
       
       <div style={styles.gameArea}>
-        {/* Left Panel */}
-        <div style={styles.panel}>
-          <h3 style={styles.panelTitle}>Captured</h3>
-          <div style={styles.capturedBox}>
-            <div style={styles.capturedRow}>
-              <span style={{color: '#aaa', fontSize: '14px'}}>White Lost</span>
-              <div style={styles.pieces}>{captured.w.map((p,i)=> <span key={i} style={styles.pieceIcon}>{p==='p'?'♟':p.toUpperCase()}</span>)}</div>
-            </div>
-            <div style={styles.divider}></div>
-            <div style={styles.capturedRow}>
-              <span style={{color: '#aaa', fontSize: '14px'}}>Black Lost</span>
-              <div style={styles.pieces}>{captured.b.map((p,i)=> <span key={i} style={{...styles.pieceIcon, color: '#ff6b6b'}}>{p==='p'?'♟':p.toUpperCase()}</span>)}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Board */}
+        {/* Board Section */}
         <div style={styles.boardWrapper}>
           <Chessboard 
             position={game.fen()} 
             onPieceDrop={onDrop} 
-            boardWidth={450}
+            boardWidth={boardWidth}
             customDarkSquareStyle={{ backgroundColor: '#779954' }}
             customLightSquareStyle={{ backgroundColor: '#e9edcc' }}
-            customBoardStyle={{
-              borderRadius: '8px',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
-            }}
+            customBoardStyle={{ borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
           />
           {winner && (
             <div style={styles.overlay}>
               <div style={styles.modal}>
                 <h2 style={styles.winnerText}>{winner}</h2>
-                <div style={styles.modalButtons}>
-                  <button onClick={() => { setGame(new Chess()); setWinner(null); }} style={styles.restartBtn}>New Game</button>
-                  <button onClick={onBack} style={styles.quitBtn}>Quit</button>
-                </div>
+                <button onClick={() => { setGame(new Chess()); setWinner(null); }} style={styles.restartBtn}>Rematch</button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Right Panel */}
-        <div style={styles.panel}>
-          <h3 style={styles.panelTitle}>History</h3>
-          <div style={styles.historyList}>
-            {game.history().map((move, i) => (
-              <div key={i} style={i % 2 === 0 ? styles.moveRowEven : styles.moveRowOdd}>
-                <span style={{color: '#888', marginRight: '10px'}}>{Math.floor(i/2) + 1}.</span>
-                {move}
-              </div>
-            ))}
-            <div ref={el => el?.scrollIntoView()} />
+        {/* Info Panels (Stack below on mobile) */}
+        <div style={styles.infoArea}>
+          <div style={styles.panel}>
+            <h3 style={styles.panelTitle}>Lost Pieces</h3>
+            <div style={styles.capturedRow}>
+              <span style={{color: '#aaa', fontSize: '12px'}}>{players.white} Lost:</span>
+              <div style={styles.pieces}>{captured.w.map((p,i)=> <span key={i} style={styles.pieceIcon}>{p==='p'?'♟':p.toUpperCase()}</span>)}</div>
+            </div>
+            <div style={{height: '10px'}}></div>
+            <div style={styles.capturedRow}>
+              <span style={{color: '#aaa', fontSize: '12px'}}>{players.black} Lost:</span>
+              <div style={styles.pieces}>{captured.b.map((p,i)=> <span key={i} style={{...styles.pieceIcon, color: '#ff6b6b'}}>{p==='p'?'♟':p.toUpperCase()}</span>)}</div>
+            </div>
           </div>
         </div>
       </div>
@@ -138,58 +138,41 @@ export default function Game({ mode, onBack }) {
 
 const styles = {
   container: {
-    minHeight: '100vh',
-    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center',
     background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-    fontFamily: '"Segoe UI", sans-serif', color: 'white', padding: '20px'
+    fontFamily: '"Segoe UI", sans-serif', color: 'white', padding: '10px'
   },
   header: {
-    width: '100%', maxWidth: '900px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px'
+    width: '100%', maxWidth: '600px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', padding: '0 10px'
   },
   backBtn: {
-    background: 'transparent', border: '1px solid #475569', color: '#cbd5e1', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer',
-    transition: 'all 0.2s', fontSize: '14px'
+    background: 'transparent', border: '1px solid #475569', color: '#cbd5e1', padding: '8px 16px', borderRadius: '6px', fontSize: '14px'
   },
-  modeBadge: {
-    background: '#3b82f6', padding: '5px 12px', borderRadius: '15px', fontSize: '13px', fontWeight: 'bold', boxShadow: '0 0 10px rgba(59, 130, 246, 0.4)'
+  turnIndicator: {
+    background: 'rgba(255,255,255,0.1)', padding: '8px 20px', borderRadius: '20px', fontSize: '16px', backdropFilter: 'blur(5px)'
   },
   gameArea: {
-    display: 'flex', gap: '30px', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'flex-start'
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%'
   },
-  panel: {
-    width: '220px', background: 'rgba(30, 41, 59, 0.7)', padding: '15px', borderRadius: '12px',
-    border: '1px solid rgba(255,255,255,0.05)', boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-  },
-  panelTitle: { margin: '0 0 15px 0', fontSize: '16px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' },
-  capturedBox: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  capturedRow: { display: 'flex', flexDirection: 'column', gap: '5px' },
-  pieces: { display: 'flex', flexWrap: 'wrap', gap: '2px', fontSize: '20px', minHeight: '25px' },
-  pieceIcon: { color: '#e2e8f0' },
-  divider: { height: '1px', background: 'rgba(255,255,255,0.1)', margin: '5px 0' },
   boardWrapper: { position: 'relative' },
-  historyList: { height: '350px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px', paddingRight: '5px' },
-  moveRowEven: { padding: '4px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px', fontSize: '14px' },
-  moveRowOdd: { padding: '4px 8px', fontSize: '14px' },
-  
-  // Winning Modal
+  infoArea: { width: '100%', maxWidth: '450px', display: 'flex', justifyContent: 'center' },
+  panel: {
+    width: '100%', background: 'rgba(30, 41, 59, 0.7)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)'
+  },
+  panelTitle: { margin: '0 0 10px 0', fontSize: '14px', color: '#94a3b8', textTransform: 'uppercase' },
+  capturedRow: { display: 'flex', alignItems: 'center', gap: '10px' },
+  pieces: { display: 'flex', flexWrap: 'wrap', gap: '2px', fontSize: '18px' },
+  pieceIcon: { color: '#e2e8f0' },
   overlay: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+    background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)',
     display: 'flex', justifyContent: 'center', alignItems: 'center', borderRadius: '8px', zIndex: 10
   },
   modal: {
-    background: 'linear-gradient(135deg, #1e293b, #0f172a)',
-    padding: '30px', borderRadius: '16px', textAlign: 'center',
-    border: '1px solid rgba(255,255,255,0.1)',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(59, 130, 246, 0.3)'
+    background: '#1e293b', padding: '30px', borderRadius: '16px', textAlign: 'center', border: '1px solid #3b82f6', boxShadow: '0 0 30px rgba(59, 130, 246, 0.5)'
   },
-  winnerText: { fontSize: '24px', margin: '0 0 20px 0', background: 'linear-gradient(to right, #4ade80, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' },
-  modalButtons: { display: 'flex', gap: '10px', justifyContent: 'center' },
+  winnerText: { fontSize: '24px', margin: '0 0 20px 0', color: '#fff' },
   restartBtn: {
-    padding: '10px 20px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold',
-    boxShadow: '0 0 15px rgba(34, 197, 94, 0.4)'
-  },
-  quitBtn: {
-    padding: '10px 20px', background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', cursor: 'pointer'
+    padding: '10px 20px', background: '#22c55e', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold'
   }
 };
