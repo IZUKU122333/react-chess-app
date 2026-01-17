@@ -1,5 +1,5 @@
 import React from 'react'
-import ChessBoard from './components/Chessboard'
+import ChessBoard from './components/chessboard'
 import './app.css'
 
 function App() {
@@ -17,5 +17,6 @@ function App() {
 
 export default App
 //Trigger deployment
+
 
 
