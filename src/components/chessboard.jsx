@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Square from './square';
-import { getInitialBoard } from '../utils/initialBoard';
+import { getInitialBoard } from '../utils/initialboard';
 
 const ChessBoard = () => {
   const [board, setBoard] = useState(getInitialBoard());
@@ -67,3 +67,4 @@ const ChessBoard = () => {
 
 
 export default ChessBoard;
+
