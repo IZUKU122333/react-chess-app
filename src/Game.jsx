@@ -96,27 +96,42 @@ export default function Game({ mode, onBack, players }) {
       </div>
       
       <div style={styles.gameArea}>
+        
         {/* Board Section */}
-        <div style={styles.boardWrapper}>
-          <Chessboard 
-            position={game.fen()} 
-            onPieceDrop={onDrop} 
-            boardWidth={boardWidth}
-            customDarkSquareStyle={{ backgroundColor: '#779954' }}
-            customLightSquareStyle={{ backgroundColor: '#e9edcc' }}
-            customBoardStyle={{ borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
-          />
-          {winner && (
-            <div style={styles.overlay}>
-              <div style={styles.modal}>
-                <h2 style={styles.winnerText}>{winner}</h2>
-                <button onClick={() => { setGame(new Chess()); setWinner(null); }} style={styles.restartBtn}>Rematch</button>
+        <div style={styles.boardColumn}>
+          
+          {/* Top Label (Black Player) */}
+          <div style={styles.playerLabelTop}>
+            <span style={styles.avatar}>👤</span> {players.black} (Black)
+          </div>
+
+          <div style={styles.boardWrapper}>
+            <Chessboard 
+              position={game.fen()} 
+              onPieceDrop={onDrop} 
+              boardWidth={boardWidth}
+              customDarkSquareStyle={{ backgroundColor: '#779954' }}
+              customLightSquareStyle={{ backgroundColor: '#e9edcc' }}
+              customBoardStyle={{ borderRadius: '8px', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}
+            />
+            {winner && (
+              <div style={styles.overlay}>
+                <div style={styles.modal}>
+                  <h2 style={styles.winnerText}>{winner}</h2>
+                  <button onClick={() => { setGame(new Chess()); setWinner(null); }} style={styles.restartBtn}>Rematch</button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Bottom Label (White Player) */}
+          <div style={styles.playerLabelBottom}>
+            <span style={styles.avatar}>👤</span> {players.white} (White)
+          </div>
+        
         </div>
 
-        {/* Info Panels (Stack below on mobile) */}
+        {/* Info Panels */}
         <div style={styles.infoArea}>
           <div style={styles.panel}>
             <h3 style={styles.panelTitle}>Lost Pieces</h3>
@@ -154,7 +169,22 @@ const styles = {
   gameArea: {
     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', width: '100%'
   },
+  boardColumn: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px'
+  },
   boardWrapper: { position: 'relative' },
+  
+  // NEW LABELS
+  playerLabelTop: {
+    width: '100%', textAlign: 'left', background: 'rgba(0,0,0,0.3)', padding: '5px 15px', borderRadius: '8px',
+    color: '#ff6b6b', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'
+  },
+  playerLabelBottom: {
+    width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.1)', padding: '5px 15px', borderRadius: '8px',
+    color: '#4ade80', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px'
+  },
+  avatar: { fontSize: '18px' },
+
   infoArea: { width: '100%', maxWidth: '450px', display: 'flex', justifyContent: 'center' },
   panel: {
     width: '100%', background: 'rgba(30, 41, 59, 0.7)', padding: '15px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)'
